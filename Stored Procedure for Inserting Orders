@@ -1,0 +1,25 @@
+---- Assuming you have defined a user-defined table type for passing order details
+CREATE PROCEDURE InsertOrder
+    @CustomerID INT,
+    @OrderDate DATE,
+    @OrderDetails OrderDetailsType READONLY
+AS
+BEGIN
+    DECLARE @NewOrderID INT;
+    DECLARE @TotalAmount DECIMAL(10,2);
+
+  ----- Calculate total order amount from the passed order details
+    SELECT @TotalAmount = SUM(Quantity * UnitPrice)
+    FROM @OrderDetails;
+
+   ---- Insert new order record
+    INSERT INTO Orders (CustomerID, OrderDate, TotalAmount)
+    VALUES (@CustomerID, @OrderDate, @TotalAmount);
+
+    SET @NewOrderID = SCOPE_IDENTITY();
+
+    ------ Insert each order detail
+    INSERT INTO OrderDetails (OrderID, ProductID, Quantity, UnitPrice)
+    SELECT @NewOrderID, ProductID, Quantity, UnitPrice
+    FROM @OrderDetails;
+END;
